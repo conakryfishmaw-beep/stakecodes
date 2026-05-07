@@ -1,12 +1,13 @@
 import { WebSocket } from "ws";
 import { logger } from "./logger";
 import { sendPromoCode } from "./telegram";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 
 const WS_URL = "wss://ws.lazybot.io/ws";
 const RECONNECT_DELAY_BASE = 3000;
 const RECONNECT_DELAY_MAX = 60000;
 const HEARTBEAT_INTERVAL = 30000;
-
+const SEEN_CODES_FILE = "/tmp/stake_seen_codes.json";
 const IDENTIFY_PAYLOAD = JSON.stringify({
   type: "identify",
   data: {
@@ -18,10 +19,25 @@ const IDENTIFY_PAYLOAD = JSON.stringify({
   _h: "ba83966a591a35b3a43ea0b65af7c44deb5db03a9843a19f46e83651511391e6",
 });
 
+function loadSeenCodes(): Set<string> {
+  try {
+    if (existsSync(SEEN_CODES_FILE)) {
+      const data = JSON.parse(readFileSync(SEEN_CODES_FILE, "utf-8"));
+      return new Set<string>(data);
+    }
+  } catch {}
+  return new Set<string>();
+}
+
+function saveSeenCodes(codes: Set<string>): void {
+  try {
+    writeFileSync(SEEN_CODES_FILE, JSON.stringify([...codes]));
+  } catch {}
+}
 let reconnectAttempts = 0;
 let stopped = false;
 
-const sentCodes = new Set<string>();
+const sentCodes = loadSeenCodes();
 
 function normalizeCode(code: string): string {
   return code.toLowerCase().replace(/^\d+-/, "");
@@ -31,6 +47,7 @@ function isNewCode(code: string): boolean {
   const normalized = normalizeCode(code);
   if (sentCodes.has(normalized)) return false;
   sentCodes.add(normalized);
+  saveSeenCodes(sentCodes);
   return true;
 }
 
