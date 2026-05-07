@@ -74,6 +74,17 @@ export async function sendPromoCode(payload: CodePayload): Promise<void> {
     "ozelbonus": "Special Bonus",
     "özel bonus": "Special Bonus",
     "bonus": "Bonus",
+    "codeupdate": "Code Update",
+    "code update": "Code Update",
+    "highroller": "HighRoller Code",
+    "highrollercode": "HighRoller Code",
+    "highroller code": "HighRoller Code",
+    "reload": "Reload Bonus",
+    "deposit": "Deposit Bonus",
+    "rakeback": "Rakeback",
+    "weekly": "Weekly Bonus",
+    "monthly": "Monthly Bonus",
+    "daily": "Daily Bonus",
   };
 
   const rawType = type ?? "Stake Promo Code";
