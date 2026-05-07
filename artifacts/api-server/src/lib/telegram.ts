@@ -69,30 +69,9 @@ async function sendWithRetry(
 export async function sendPromoCode(payload: CodePayload): Promise<void> {
   const { code, type, shortName, value, requirement, claimLimit } = payload;
 
-  const TRANSLATIONS: Record<string, string> = {
-    "özelbonus": "Special Bonus",
-    "ozelbonus": "Special Bonus",
-    "özel bonus": "Special Bonus",
-    "bonus": "Bonus",
-    "codeupdate": "Code Update",
-    "code update": "Code Update",
-    "highroller": "HighRoller Code",
-    "highrollercode": "HighRoller Code",
-    "highroller code": "HighRoller Code",
-    "reload": "Reload Bonus",
-    "deposit": "Deposit Bonus",
-    "rakeback": "Rakeback",
-    "weekly": "Weekly Bonus",
-    "monthly": "Monthly Bonus",
-    "daily": "Daily Bonus",
-  };
-
-  const rawType = type ?? "Stake Promo Code";
-  const translatedType = TRANSLATIONS[rawType.toLowerCase()] ?? rawType;
-
-  const header = `🎁 <b>${escapeHtml(translatedType)}</b> 🎁`;
-
-  const lines: string[] = [header, ""];
+  const lines: string[] = [];
+  lines.push(`🎁 <b>Stake Promo Code</b> 🎁`);
+  lines.push("");
   lines.push(`Code: <code>${escapeHtml(code)}</code>`);
   if (value) lines.push(`Value: ${escapeHtml(value)}`);
   if (requirement) lines.push(`Requirement: ${escapeHtml(requirement)}`);
