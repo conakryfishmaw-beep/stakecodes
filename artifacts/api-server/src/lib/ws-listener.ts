@@ -161,16 +161,20 @@ function connect(): void {
 
     if (msgType === "bonusCheck") {
       const bonuses = Array.isArray(data.bonuses) ? data.bonuses : [];
+      let seeded = 0;
       for (const entry of bonuses) {
         if (typeof entry !== "string") continue;
         const match = entry.match(/\?bonus=([^&\s]+)/);
         const code = match ? match[1] : null;
-        if (!code || !isNewCode(code)) continue;
-        const label = entry.split("-https://")[0] ?? "bonus";
-        sendPromoCode({ code, type: label }).catch(
-          (err) => logger.error({ err, code }, "Failed to forward bonusCheck code to Telegram"),
-        );
+        if (!code) continue;
+        const normalized = normalizeCode(code);
+        if (!sentCodes.has(normalized)) {
+          sentCodes.add(normalized);
+          seeded++;
+        }
       }
+      if (seeded > 0) saveSentCodes(sentCodes);
+      logger.info({ total: bonuses.length, seeded }, "bonusCheck — seeded existing codes, not forwarding to Telegram");
       return;
     }
 
