@@ -21,6 +21,14 @@ const IDENTIFY_PAYLOAD = JSON.stringify({
 let reconnectAttempts = 0;
 let stopped = false;
 
+const sentCodes = new Set<string>();
+
+function isNewCode(code: string): boolean {
+  if (sentCodes.has(code)) return false;
+  sentCodes.add(code);
+  return true;
+}
+
 function getReconnectDelay(): number {
   const delay = Math.min(
     RECONNECT_DELAY_BASE * Math.pow(1.5, reconnectAttempts),
@@ -126,7 +134,7 @@ function connect(): void {
         if (typeof entry !== "string") continue;
         const match = entry.match(/\?bonus=([^&\s]+)/);
         const code = match ? match[1] : null;
-        if (!code) continue;
+        if (!code || !isNewCode(code)) continue;
         const label = entry.split("-https://")[0] ?? "bonus";
         sendPromoCode({ code, type: label }).catch(
           (err) => logger.error({ err, code }, "Failed to forward bonusCheck code to Telegram"),
@@ -138,7 +146,7 @@ function connect(): void {
     logger.info({ msgType, data }, "LazyBot WS message received");
 
     const code = extractCode(data);
-    if (!code) return;
+    if (!code || !isNewCode(code)) return;
 
     const { codeType, value, requirement, claimLimit } = extractDetails(data);
 
