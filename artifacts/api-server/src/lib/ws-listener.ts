@@ -1,13 +1,14 @@
 import { WebSocket } from "ws";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { logger } from "./logger";
 import { sendPromoCode } from "./telegram";
-import { readFileSync, writeFileSync, existsSync } from "fs";
 
 const WS_URL = "wss://ws.lazybot.io/ws";
 const RECONNECT_DELAY_BASE = 3000;
 const RECONNECT_DELAY_MAX = 60000;
 const HEARTBEAT_INTERVAL = 30000;
-const SEEN_CODES_FILE = "/tmp/stake_seen_codes.json";
+const SENT_CODES_PATH = "/data/sent-codes.json";
+
 const IDENTIFY_PAYLOAD = JSON.stringify({
   type: "identify",
   data: {
@@ -19,25 +20,33 @@ const IDENTIFY_PAYLOAD = JSON.stringify({
   _h: "ba83966a591a35b3a43ea0b65af7c44deb5db03a9843a19f46e83651511391e6",
 });
 
-function loadSeenCodes(): Set<string> {
-  try {
-    if (existsSync(SEEN_CODES_FILE)) {
-      const data = JSON.parse(readFileSync(SEEN_CODES_FILE, "utf-8"));
-      return new Set<string>(data);
-    }
-  } catch {}
-  return new Set<string>();
-}
-
-function saveSeenCodes(codes: Set<string>): void {
-  try {
-    writeFileSync(SEEN_CODES_FILE, JSON.stringify([...codes]));
-  } catch {}
-}
 let reconnectAttempts = 0;
 let stopped = false;
 
-const sentCodes = loadSeenCodes();
+function loadSentCodes(): Set<string> {
+  try {
+    if (existsSync(SENT_CODES_PATH)) {
+      const raw = readFileSync(SENT_CODES_PATH, "utf-8");
+      const arr = JSON.parse(raw) as string[];
+      logger.info({ count: arr.length }, "Loaded sent codes from disk");
+      return new Set(arr);
+    }
+  } catch (err) {
+    logger.warn({ err }, "Failed to load sent codes from disk — starting fresh");
+  }
+  return new Set();
+}
+
+function saveSentCodes(codes: Set<string>): void {
+  try {
+    mkdirSync("/data", { recursive: true });
+    writeFileSync(SENT_CODES_PATH, JSON.stringify([...codes]), "utf-8");
+  } catch (err) {
+    logger.warn({ err }, "Failed to save sent codes to disk");
+  }
+}
+
+const sentCodes = loadSentCodes();
 
 function normalizeCode(code: string): string {
   return code.toLowerCase().replace(/^\d+-/, "");
@@ -47,7 +56,7 @@ function isNewCode(code: string): boolean {
   const normalized = normalizeCode(code);
   if (sentCodes.has(normalized)) return false;
   sentCodes.add(normalized);
-  saveSeenCodes(sentCodes);
+  saveSentCodes(sentCodes);
   return true;
 }
 
