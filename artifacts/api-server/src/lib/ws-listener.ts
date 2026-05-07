@@ -23,9 +23,14 @@ let stopped = false;
 
 const sentCodes = new Set<string>();
 
+function normalizeCode(code: string): string {
+  return code.toLowerCase().replace(/^\d+-/, "");
+}
+
 function isNewCode(code: string): boolean {
-  if (sentCodes.has(code)) return false;
-  sentCodes.add(code);
+  const normalized = normalizeCode(code);
+  if (sentCodes.has(normalized)) return false;
+  sentCodes.add(normalized);
   return true;
 }
 
