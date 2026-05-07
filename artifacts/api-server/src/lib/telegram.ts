@@ -70,7 +70,7 @@ export async function sendPromoCode(payload: CodePayload): Promise<void> {
   const { code, type, shortName, value, requirement, claimLimit } = payload;
 
   const lines: string[] = [];
-  lines.push(`🎁 <b>Stake Promo Code</b> 🎁`);
+  lines.push(`<b>Stake Promo Code</b>`);
   lines.push("");
   lines.push(`Code: <code>${escapeHtml(code)}</code>`);
   if (value) lines.push(`Value: ${escapeHtml(value)}`);
