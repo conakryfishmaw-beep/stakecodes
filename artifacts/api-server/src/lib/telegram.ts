@@ -27,6 +27,45 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function getRetryAfter(err: unknown): number | null {
+  if (
+    err &&
+    typeof err === "object" &&
+    "message" in err &&
+    typeof (err as { message: unknown }).message === "string"
+  ) {
+    const match = (err as { message: string }).message.match(/retry after (\d+)/i);
+    if (match) return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+async function sendWithRetry(
+  message: string,
+  claimUrl: string,
+  retries = 3,
+): Promise<void> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await bot.sendMessage(chatId!, message, {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [[{ text: "🔗 Code Link", url: claimUrl }]],
+        },
+      });
+      return;
+    } catch (err) {
+      const retryAfter = getRetryAfter(err);
+      if (retryAfter !== null && attempt < retries) {
+        logger.warn({ retryAfter, attempt }, "Telegram 429 — waiting before retry");
+        await new Promise((r) => setTimeout(r, (retryAfter + 1) * 1000));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 export async function sendPromoCode(payload: CodePayload): Promise<void> {
   const { code, type, shortName, value, requirement, claimLimit } = payload;
 
@@ -44,14 +83,7 @@ export async function sendPromoCode(payload: CodePayload): Promise<void> {
   const claimUrl = `https://playstake.club/drop?code=${encodeURIComponent(code)}`;
 
   try {
-    await bot.sendMessage(chatId!, message, {
-      parse_mode: "HTML",
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "🔗 Code Link", url: claimUrl }],
-        ],
-      },
-    });
+    await sendWithRetry(message, claimUrl);
     logger.info({ code, chatId }, "Promo code sent to Telegram");
   } catch (err) {
     logger.error({ err, code }, "Failed to send promo code to Telegram");
