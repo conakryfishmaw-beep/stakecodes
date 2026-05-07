@@ -9,7 +9,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc tsconfig.base.json t
 COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 RUN pnpm --filter @workspace/api-server run build
 
