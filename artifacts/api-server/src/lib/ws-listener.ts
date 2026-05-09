@@ -49,7 +49,7 @@ function saveSentCodes(codes: Set<string>): void {
 const sentCodes = loadSentCodes();
 
 function normalizeCode(code: string): string {
-  return code.toLowerCase().replace(/^\d+-/, "");
+  return code.toLowerCase().replace(/^[\d\w]+-/, "");
 }
 
 function isNewCode(code: string): boolean {
