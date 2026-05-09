@@ -107,10 +107,16 @@ function extractDetails(data: Record<string, unknown>) {
   return { codeType, value, requirement, claimLimit };
 }
 
+let currentWs: WebSocket | null = null;
+
 function connect(): void {
   if (stopped) return;
-
-  logger.info({ url: WS_URL, attempt: reconnectAttempts }, "Connecting to LazyBot WS");
+  
+  // Eski bağlantıyı kapat
+  if (currentWs && currentWs.readyState === WebSocket.OPEN) {
+    currentWs.terminate();
+  }
+  
 
   const ws = new WebSocket(WS_URL);
   let heartbeat: ReturnType<typeof setInterval> | null = null;
