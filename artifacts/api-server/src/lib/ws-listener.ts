@@ -70,8 +70,6 @@ function getReconnectDelay(): number {
 
 function extractCode(data: Record<string, unknown>): string | null {
   if (typeof data.code === "string" && data.code.length > 0) return data.code;
-  if (typeof data.promo === "string" && data.promo.length > 0) return data.promo;
-  if (typeof data.hint === "string" && data.hint.length > 0) return data.hint;
   return null;
 }
 
